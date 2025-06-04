@@ -7,6 +7,8 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using System.Configuration;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
 
 namespace MediaTekDocuments.dal
 {
@@ -18,7 +20,7 @@ namespace MediaTekDocuments.dal
         /// <summary>
         /// adresse de l'API
         /// </summary>
-        private static readonly string uriApi = "http://localhost/rest_mediatekdocuments/";
+        private static readonly string uriApi = "http://localhost/rest_mediatek/";
         /// <summary>
         /// instance unique de la classe
         /// </summary>
@@ -37,6 +39,14 @@ namespace MediaTekDocuments.dal
         private const string POST = "POST";
         /// <summary>
         /// méthode HTTP pour update
+        /// </summary>
+        private const string PUT = "PUT";
+
+        private const string DELETE = "DELETE";
+
+        private Dictionary<string, Genre> classeurGenres = new Dictionary<string, Genre>();
+        private Dictionary<string, Public> classeurPublics = new Dictionary<string, Public>();
+        private Dictionary<string, Rayon> classeurRayons = new Dictionary<string, Rayon>();
 
         /// <summary>
         /// Méthode privée pour créer un singleton
@@ -63,7 +73,7 @@ namespace MediaTekDocuments.dal
         /// <returns>instance unique de la classe</returns>
         public static Access GetInstance()
         {
-            if(instance == null)
+            if (instance == null)
             {
                 instance = new Access();
             }
@@ -130,6 +140,237 @@ namespace MediaTekDocuments.dal
             return lesRevues;
         }
 
+        public bool AjouterLivreDvD(object livreDvd)
+        {
+            try
+            {
+                var docDict = JObject.FromObject(livreDvd);
+                var livreDvdFiltré = new
+                {
+                    id = docDict.ContainsKey("Id") ? docDict["Id"]?.ToString() : null,
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(
+                    livreDvdFiltré,
+                    new Newtonsoft.Json.JsonSerializerSettings
+                    {
+                        ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+                    }
+                );
+
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                List<Document> liste = TraitementRecup<Document>(POST, "livres_dvd", formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool AjouterRevue(object revue)
+        {
+            try
+            {
+                var docDict = JObject.FromObject(revue);
+                var revueFiltré = new
+                {
+                    id = docDict.ContainsKey("Id") ? docDict["Id"]?.ToString() : null,
+                    periodicite = docDict.ContainsKey("Periodicite") ? docDict["Periodicite"]?.ToString() : null,
+                    delaiMiseADispo = docDict.ContainsKey("DelaiMiseADispo") && int.TryParse(docDict["DelaiMiseADispo"]?.ToString(), out int result) ? result : 0
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(
+                    revueFiltré,
+                    new Newtonsoft.Json.JsonSerializerSettings
+                    {
+                        ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+                    }
+                );
+
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                List<Document> liste = TraitementRecup<Document>(POST, "revue", formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool AjouterLivre(object livre)
+        {
+            try
+            {
+                var docDict = JObject.FromObject(livre);
+                var livreFiltré = new
+                {
+                    id = docDict.ContainsKey("Id") ? docDict["Id"]?.ToString() : null,
+                    isbn = docDict.ContainsKey("Isbn") ? docDict["Isbn"]?.ToString() : null,
+                    auteur = docDict.ContainsKey("Auteur") ? docDict["Auteur"]?.ToString() : null,
+                    collection = docDict.ContainsKey("Collection") ? docDict["Collection"]?.ToString() : null
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(
+                    livreFiltré,
+                    new Newtonsoft.Json.JsonSerializerSettings
+                    {
+                        ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+                    }
+                );
+
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                List<Document> liste = TraitementRecup<Document>(POST, "livre", formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool AjouterDocument(object document)
+        {
+            try
+            {
+                var docDict = JObject.FromObject(document);
+                var documentFiltré = new
+                {
+                    id = docDict.ContainsKey("Id") ? docDict["Id"]?.ToString() : null,
+                    titre = docDict.ContainsKey("Titre") ? docDict["Titre"]?.ToString() : null,
+                    idRayon = docDict.ContainsKey("IdRayon") ? docDict["IdRayon"]?.ToString() : null,
+                    idPublic = docDict.ContainsKey("IdPublic") ? docDict["IdPublic"]?.ToString() : null,
+                    idGenre = docDict.ContainsKey("IdGenre") ? docDict["IdGenre"]?.ToString() : null,
+                    image = docDict.ContainsKey("Image") ? docDict["Image"]?.ToString() : null
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(
+                    documentFiltré,
+                    new Newtonsoft.Json.JsonSerializerSettings
+                    {
+                        ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+                    }
+                );
+
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                List<Document> liste = TraitementRecup<Document>(POST, "document", formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool AjouterDvd(object dvd)
+        {
+            try
+            {
+                var docDict = JObject.FromObject(dvd);
+                var dvdFiltre = new
+                {
+                    id = docDict.ContainsKey("Id") ? docDict["Id"]?.ToString() : null,
+                    synopsis = docDict.ContainsKey("Synopsis") ? docDict["Synopsis"]?.ToString() : null,
+                    realisateur = docDict.ContainsKey("Realisateur") ? docDict["Realisateur"]?.ToString() : null,
+                    duree = docDict.ContainsKey("Duree") ? docDict["Duree"]?.ToString() : null
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(
+                    dvdFiltre,
+                    new Newtonsoft.Json.JsonSerializerSettings
+                    {
+                        ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+                    }
+                );
+
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                List<Document> liste = TraitementRecup<Document>(POST, "dvd", formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="nomRayon"></param>
+        /// <returns></returns>
+        public string GetIdByNameOfRayon(string nomRayon)
+        {
+            if (classeurRayons != null && classeurRayons.Count > 0)
+            {
+                var rayon = classeurRayons.FirstOrDefault(x => x.Value.Libelle == nomRayon);
+                if (!string.IsNullOrEmpty(rayon.Key))
+                {
+                    return rayon.Key;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="nomPublic"></param>
+        /// <returns></returns>
+        public string GetIdByNameOfPublic(string nomPublic)
+        {
+            if (classeurPublics != null && classeurPublics.Count > 0)
+            {
+                var pub = classeurPublics.FirstOrDefault(x => x.Value.Libelle == nomPublic);
+                if (!string.IsNullOrEmpty(pub.Key))
+                {
+                    return pub.Key;
+                }
+            }
+            return null;
+        }
+
+        public string GetIdByNameOfGenre(string nomGenre)
+        {
+            if (classeurGenres != null && classeurGenres.Count > 0)
+            {
+                var genre = classeurGenres.FirstOrDefault(x => x.Value.Libelle == nomGenre);
+                if (!string.IsNullOrEmpty(genre.Key))
+                {
+                    return genre.Key;
+                }
+            }
+            return null;
+        }
 
         /// <summary>
         /// Retourne les exemplaires d'une revue
@@ -158,9 +399,334 @@ namespace MediaTekDocuments.dal
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                return false;
             }
-            return false;
+        }
+
+        public void DictionnaireGenre()
+        {
+            List<Categorie> genres = GetAllGenres();
+            foreach (var genre in genres)
+            {
+                classeurGenres[genre.Id] = (Genre)genre;
+            }
+        }
+
+        public void DictionnairePublic()
+        {
+            List<Categorie> publics = GetAllPublics();
+            foreach (var pub in publics)
+            {
+                classeurPublics[pub.Id] = (Public)pub;
+            }
+        }
+
+        public void DictionnaireRayon()
+        {
+            List<Categorie> rayons = GetAllRayons();
+            foreach (var rayon in rayons)
+            {
+                classeurRayons[rayon.Id] = (Rayon)rayon;
+            }
+        }
+
+        public bool ModifierRevue(Revue revue)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(revue.Id))
+                {
+                    return false;
+                }
+
+                var revueFiltre = new
+                {
+                    periodicite = revue.Periodicite,
+                    delaiMiseADispo = revue.DelaiMiseADispo
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(revueFiltre);
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                string url = $"revue/{revue.Id}";
+                List<Document> liste = TraitementRecup<Document>(PUT, url, formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool ModifierDvd(Dvd dvd)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(dvd.Id))
+                {
+                    return false;
+                }
+
+                var dvdFiltre = new
+                {
+                    synopsis = dvd.Synopsis,
+                    realisateur = dvd.Realisateur,
+                    duree = dvd.Duree.ToString()
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(dvdFiltre);
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                string url = $"dvd/{dvd.Id}";
+                List<Document> liste = TraitementRecup<Document>(PUT, url, formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool ModifierLivre(Livre livre)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(livre.Id))
+                {
+                    return false;
+                }
+
+                var livreFiltré = new
+                {
+                    isbn = livre.Isbn,
+                    auteur = livre.Auteur,
+                    collection = livre.Collection
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(livreFiltré);
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                string url = $"livre/{livre.Id}";
+                List<Document> liste = TraitementRecup<Document>(PUT, url, formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool ModifierDocument(Document document)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(document.Id))
+                {
+                    return false;
+                }
+
+                var documentFiltre = new
+                {
+                    titre = document.Titre,
+                    image = document.Image,
+                    idRayon = document.IdRayon,
+                    idGenre = document.IdGenre,
+                    idPublic = document.IdPublic
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(documentFiltre);
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                string url = $"document/{document.Id}";
+                List<Document> liste = TraitementRecup<Document>(PUT, url, formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool ModifierLivre_DvD(LivreDvd livredvd)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(livredvd.Id))
+                {
+                    return false;
+                }
+
+                var LivreDvDFiltre = new
+                {
+                    id = livredvd.Titre
+                };
+
+                string jsonPayload = JsonConvert.SerializeObject(LivreDvDFiltre);
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+                string url = $"document/{livredvd.Id}";
+                List<Document> liste = TraitementRecup<Document>(PUT, url, formEncodedPayload);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool SupprimerLivre(Livre livre)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(livre.Id))
+                {
+                    return false;
+                }
+
+                string jsonId = Uri.EscapeDataString($"{{\"id\":\"{livre.Id}\"}}");
+                string url = $"livre/{jsonId}";
+                List<Livre> liste = TraitementRecup<Livre>(DELETE, url, null);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool SupprimerDvd(Dvd dvd)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(dvd.Id))
+                {
+                    return false;
+                }
+
+                string jsonId = Uri.EscapeDataString($"{{\"id\":\"{dvd.Id}\"}}");
+                string url = $"dvd/{jsonId}";
+                List<Livre> liste = TraitementRecup<Livre>(DELETE, url, null);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool SupprimerRevue(Revue revue)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(revue.Id))
+                {
+                    return false;
+                }
+
+                string jsonId = Uri.EscapeDataString($"{{\"id\":\"{revue.Id}\"}}");
+                string url = $"revue/{jsonId}";
+                List<Livre> liste = TraitementRecup<Livre>(DELETE, url, null);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool SupprimerLivre_DvD(LivreDvd livre)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(livre.Id))
+                {
+                    return false;
+                }
+
+                string jsonId = Uri.EscapeDataString($"{{\"id\":\"{livre.Id}\"}}");
+                string url = $"livres_dvd/{jsonId}";
+                List<Livre> liste = TraitementRecup<Livre>(DELETE, url, null);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool SupprimerDocument(Document document)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(document.Id))
+                {
+                    return false;
+                }
+
+                string jsonId = Uri.EscapeDataString($"{{\"id\":\"{document.Id}\"}}");
+                string url = $"document/{jsonId}";
+                List<Livre> liste = TraitementRecup<Livre>(DELETE, url, null);
+
+                if (liste == null)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -171,32 +737,24 @@ namespace MediaTekDocuments.dal
         /// <param name="message">information envoyée dans l'url</param>
         /// <param name="parametres">paramètres à envoyer dans le body, au format "chp1=val1&chp2=val2&..."</param>
         /// <returns>liste d'objets récupérés (ou liste vide)</returns>
-        private List<T> TraitementRecup<T> (String methode, String message, String parametres)
+        private List<T> TraitementRecup<T>(String methode, String message, String parametres)
         {
-            // trans
             List<T> liste = new List<T>();
             try
             {
                 JObject retour = api.RecupDistant(methode, message, parametres);
-                // extraction du code retourné
                 String code = (String)retour["code"];
                 if (code.Equals("200"))
                 {
-                    // dans le cas du GET (select), récupération de la liste d'objets
                     if (methode.Equals(GET))
                     {
                         String resultString = JsonConvert.SerializeObject(retour["result"]);
-                        // construction de la liste d'objets à partir du retour de l'api
                         liste = JsonConvert.DeserializeObject<List<T>>(resultString, new CustomBooleanJsonConverter());
                     }
                 }
-                else
-                {
-                    Console.WriteLine("code erreur = " + code + " message = " + (String)retour["message"]);
-                }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
-                Console.WriteLine("Erreur lors de l'accès à l'API : "+e.Message);
                 Environment.Exit(0);
             }
             return liste;
@@ -243,6 +801,5 @@ namespace MediaTekDocuments.dal
                 serializer.Serialize(writer, value);
             }
         }
-
     }
 }

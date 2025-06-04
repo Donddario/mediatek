@@ -1101,8 +1101,8 @@ namespace MediaTekDocuments.view
         /// </summary>
         private void AfficheReceptionExemplairesRevue()
         {
-            string idDocuement = txbReceptionRevueNumero.Text;
-            lesExemplaires = controller.GetExemplairesRevue(idDocuement);
+            string idDocument = txbReceptionRevueNumero.Text;
+            lesExemplaires = controller.GetExemplairesRevue(idDocument);
             RemplirReceptionExemplairesListe(lesExemplaires);
             AccesReceptionExemplaireGroupBox(true);
         }
