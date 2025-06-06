@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Drawing;
 using System.IO;
+using System.Xml;
+using Newtonsoft.Json;
 
 namespace MediaTekDocuments.view
 
@@ -49,7 +51,7 @@ namespace MediaTekDocuments.view
 
         #region Onglet Livres
         private readonly BindingSource bdgLivresListe = new BindingSource();
-        private List<Livre> lesLivres = new List<Livre>();
+        public List<Livre> lesLivres = new List<Livre>();
 
         /// <summary>
         /// Ouverture de l'onglet Livres : 
@@ -306,7 +308,7 @@ namespace MediaTekDocuments.view
         /// Affichage de la liste complète des livres
         /// et annulation de toutes les recherches et filtres
         /// </summary>
-        private void RemplirLivresListeComplete()
+        public void RemplirLivresListeComplete()
         {
             RemplirLivresListe(lesLivres);
             VideLivresZones();
@@ -364,7 +366,7 @@ namespace MediaTekDocuments.view
 
         #region Onglet Dvd
         private readonly BindingSource bdgDvdListe = new BindingSource();
-        private List<Dvd> lesDvd = new List<Dvd>();
+        public List<Dvd> lesDvd = new List<Dvd>();
 
         /// <summary>
         /// Ouverture de l'onglet Dvds : 
@@ -621,7 +623,7 @@ namespace MediaTekDocuments.view
         /// Affichage de la liste complète des Dvd
         /// et annulation de toutes les recherches et filtres
         /// </summary>
-        private void RemplirDvdListeComplete()
+        public void RemplirDvdListeComplete()
         {
             RemplirDvdListe(lesDvd);
             VideDvdZones();
@@ -679,7 +681,7 @@ namespace MediaTekDocuments.view
 
         #region Onglet Revues
         private readonly BindingSource bdgRevuesListe = new BindingSource();
-        private List<Revue> lesRevues = new List<Revue>();
+        public List<Revue> lesRevues = new List<Revue>();
 
         /// <summary>
         /// Ouverture de l'onglet Revues : 
@@ -933,7 +935,7 @@ namespace MediaTekDocuments.view
         /// Affichage de la liste complète des revues
         /// et annulation de toutes les recherches et filtres
         /// </summary>
-        private void RemplirRevuesListeComplete()
+        public void RemplirRevuesListeComplete()
         {
             RemplirRevuesListe(lesRevues);
             VideRevuesZones();
@@ -1239,5 +1241,321 @@ namespace MediaTekDocuments.view
             }
         }
         #endregion
+
+        /// <summary>
+        /// Chargement initial du formulaire FrmMediatek.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FrmMediatek_Load(object sender, EventArgs e)
+        {
+            controller.GetAllDictionnaries();
+        }
+
+        /// <summary>
+        /// Ouvre la fenêtre d’ajout de livre.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_ajouterLivre_Click(object sender, EventArgs e)
+        {
+            FrmAjouterLivre.ShowDialog();
+        }
+
+        /// <summary>
+        /// Ouvre la fenêtre de modification pour le livre sélectionné.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_modifierLivre_Click(object sender, EventArgs e)
+        {
+            Livre livre = new Livre(
+                txbLivresNumero.Text,
+                txbLivresTitre.Text,
+                txbLivresImage.Text,
+                txbLivresIsbn.Text,
+                txbLivresAuteur.Text,
+                txbLivresCollection.Text,
+                controller.GetIdByNameOfGenre(txbLivresGenre.Text),
+                txbLivresGenre.Text,
+                controller.GetIdByNameOfPublic(txbLivresPublic.Text),
+                txbLivresPublic.Text,
+                controller.GetIdByNameOfRayon(txbLivresRayon.Text),
+                txbLivresRayon.Text
+            );
+
+            FrmModifierLivre = new FrmModifierLivre(livre, this);
+            FrmModifierLivre.ShowDialog();
+        }
+
+        /// <summary>
+        /// Supprime le livre sélectionné après confirmation.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_supprimerLivre_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(txbLivresNumero.Text))
+            {
+                MessageBox.Show("Veuillez sélectionner un livre à supprimer.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                "Voulez-vous vraiment supprimer ce livre ? Cette action est irréversible.",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning
+            );
+
+            Livre livre = new Livre(
+                txbLivresNumero.Text,
+                txbLivresTitre.Text,
+                txbLivresImage.Text,
+                txbLivresIsbn.Text,
+                txbLivresAuteur.Text,
+                txbLivresCollection.Text,
+                controller.GetIdByNameOfGenre(txbLivresGenre.Text),
+                txbLivresGenre.Text,
+                controller.GetIdByNameOfPublic(txbLivresPublic.Text),
+                txbLivresPublic.Text,
+                controller.GetIdByNameOfRayon(txbLivresRayon.Text),
+                txbLivresRayon.Text
+            );
+
+            Document document = new Document(
+                txbLivresNumero.Text,
+                txbLivresTitre.Text,
+                txbLivresImage.Text,
+                controller.GetIdByNameOfGenre(txbLivresGenre.Text),
+                txbLivresGenre.Text,
+                controller.GetIdByNameOfPublic(txbLivresPublic.Text),
+                txbLivresPublic.Text,
+                controller.GetIdByNameOfRayon(txbLivresRayon.Text),
+                txbLivresRayon.Text
+            );
+
+            if (result == DialogResult.Yes)
+            {
+                bool success = controller.SupprimerLivre(livre, document);
+
+                if (success)
+                {
+                    MessageBox.Show("Le livre a bien été supprimé.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Erreur lors de la suppression du livre.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
+            lesLivres = controller.GetAllLivres();
+            RemplirLivresListeComplete();
+        }
+
+        /// <summary>
+        /// Ouvre la fenêtre d’ajout de revue.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_ajouterRevue_Click(object sender, EventArgs e)
+        {
+            FrmAjouterRevue.ShowDialog();
+        }
+
+        /// <summary>
+        /// Ouvre la fenêtre de modification pour la revue sélectionnée.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_modifierRevue_Click(object sender, EventArgs e)
+        {
+            Revue revue = new Revue(
+                txbRevuesNumero.Text,
+                txbRevuesTitre.Text,
+                txbRevuesImage.Text,
+                controller.GetIdByNameOfGenre(txbLivresGenre.Text),
+                txbRevuesGenre.Text,
+                controller.GetIdByNameOfPublic(txbLivresPublic.Text),
+                txbRevuesPublic.Text,
+                controller.GetIdByNameOfRayon(txbLivresRayon.Text),
+                txbRevuesRayon.Text,
+                txbRevuesPeriodicite.Text,
+                int.Parse(txbRevuesDateMiseADispo.Text)
+            );
+
+            FrmModifierRevue = new FrmModifierRevue(revue, this);
+            FrmModifierRevue.ShowDialog();
+        }
+
+        /// <summary>
+        /// Supprime la revue sélectionnée après confirmation.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_supprimerRevue_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(txbRevuesNumero.Text))
+            {
+                MessageBox.Show("Veuillez sélectionner un livre à supprimer.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                "Voulez-vous vraiment supprimer cette revue ? Cette action est irréversible.",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning
+            );
+
+            Revue revue = new Revue(
+                txbRevuesNumero.Text,
+                txbRevuesTitre.Text,
+                txbRevuesImage.Text,
+                controller.GetIdByNameOfGenre(txbLivresGenre.Text),
+                txbRevuesGenre.Text,
+                controller.GetIdByNameOfPublic(txbLivresPublic.Text),
+                txbRevuesPublic.Text,
+                controller.GetIdByNameOfRayon(txbLivresRayon.Text),
+                txbRevuesRayon.Text,
+                txbRevuesPeriodicite.Text,
+                int.Parse(txbRevuesDateMiseADispo.Text)
+            );
+
+            Document document = new Document(
+                txbRevuesNumero.Text,
+                txbRevuesTitre.Text,
+                txbRevuesImage.Text,
+                controller.GetIdByNameOfGenre(txbRevuesGenre.Text),
+                txbRevuesGenre.Text,
+                controller.GetIdByNameOfPublic(txbRevuesPublic.Text),
+                txbRevuesPublic.Text,
+                controller.GetIdByNameOfRayon(txbRevuesRayon.Text),
+                txbRevuesRayon.Text
+            );
+
+            if (result == DialogResult.Yes)
+            {
+                bool success = controller.SupprimerRevue(revue, document);
+
+                if (success)
+                {
+                    MessageBox.Show("Le livre a bien été supprimé.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Erreur lors de la suppression du livre.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
+            lesRevues = controller.GetAllRevues();
+            RemplirRevuesListeComplete();
+        }
+
+        /// <summary>
+        /// Ouvre la fenêtre d’ajout de DVD.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_ajouterDVD_Click(object sender, EventArgs e)
+        {
+            FrmAjouterDvD.ShowDialog();
+        }
+
+        /// <summary>
+        /// Ouvre la fenêtre de modification pour le DVD sélectionné.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_modifierDVD_Click(object sender, EventArgs e)
+        {
+            Dvd dvd = new Dvd(
+                txbDvdNumero.Text,
+                txbDvdTitre.Text,
+                txbDvdImage.Text,
+                int.Parse(txbDvdDuree.Text),
+                txbDvdRealisateur.Text,
+                txbDvdSynopsis.Text,
+                controller.GetIdByNameOfGenre(txbLivresGenre.Text),
+                txbLivresGenre.Text,
+                controller.GetIdByNameOfPublic(txbLivresPublic.Text),
+                txbLivresPublic.Text,
+                controller.GetIdByNameOfRayon(txbLivresRayon.Text),
+                txbLivresRayon.Text
+            );
+
+            FrmModifierDvD = new FrmModifierDvD(dvd, this);
+            FrmModifierDvD.ShowDialog();
+        }
+
+        /// <summary>
+        /// Supprime le DVD sélectionné après confirmation.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btn_supprimerDVD_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(txbDvdNumero.Text))
+            {
+                MessageBox.Show("Veuillez sélectionner un livre à supprimer.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            DialogResult result = MessageBox.Show(
+                "Voulez-vous vraiment supprimer ce livre ? Cette action est irréversible.",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning
+            );
+
+            Dvd dvd = new Dvd(
+                txbDvdNumero.Text,
+                txbDvdTitre.Text,
+                txbDvdImage.Text,
+                int.Parse(txbDvdDuree.Text),
+                txbDvdRealisateur.Text,
+                txbDvdSynopsis.Text,
+                controller.GetIdByNameOfGenre(txbDvdGenre.Text),
+                txbDvdGenre.Text,
+                controller.GetIdByNameOfPublic(txbDvdPublic.Text),
+                txbDvdPublic.Text,
+                controller.GetIdByNameOfRayon(txbDvdRayon.Text),
+                txbDvdRayon.Text
+            );
+
+            Document document = new Document(
+                txbDvdNumero.Text,
+                txbDvdTitre.Text,
+                txbDvdImage.Text,
+                controller.GetIdByNameOfGenre(txbDvdGenre.Text),
+                txbDvdGenre.Text,
+                controller.GetIdByNameOfPublic(txbDvdPublic.Text),
+                txbDvdPublic.Text,
+                controller.GetIdByNameOfRayon(txbDvdRayon.Text),
+                txbDvdRayon.Text
+            );
+
+            if (result == DialogResult.Yes)
+            {
+                bool success = controller.SupprimerDvd(dvd, document);
+
+                if (success)
+                {
+                    MessageBox.Show("Le livre a bien été supprimé.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Erreur lors de la suppression du livre.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
+            lesDvd = controller.GetAllDvd();
+            RemplirDvdListeComplete();
+        }
+
+        private void tabOngletsApplication_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
