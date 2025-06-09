@@ -14,15 +14,15 @@ namespace MediaTekDocuments.view
 {
     public partial class FrmAbonnements : Form
     {
-        private FrmMediatek FrmMediatek;
         private readonly BindingSource bdgAbonnements = new BindingSource();
         public List<Abonnement> lesAbonnements = new List<Abonnement>();
         private FrmMediatekController controller;
-        public FrmAbonnements(FrmMediatek frmMediatek)
+        private Utilisateur utilisateur;
+        public FrmAbonnements(Utilisateur utilisateur)
         {
             InitializeComponent();
-            this.FrmMediatek = frmMediatek;
             this.controller = new FrmMediatekController();
+            this.utilisateur = utilisateur;
         }
 
         private void FrmAbonnements_Load(object sender, EventArgs e)
@@ -32,6 +32,9 @@ namespace MediaTekDocuments.view
 
         private void button1_Click(object sender, EventArgs e)
         {
+            this.Hide();
+            FrmMediatek frmMediatek = new FrmMediatek(utilisateur);
+            frmMediatek.ShowDialog();
             this.Close();
         }
 
@@ -43,8 +46,8 @@ namespace MediaTekDocuments.view
 
                 if (lesAbonnements == null || lesAbonnements.Count == 0)
                 {
-                    Console.WriteLine("Aucun abonnement trouvé, fermeture de la fenêtre.");
-                    this.Close();
+                    Console.WriteLine("Aucun abonnement.");
+                    
                 }
                 else
                 {
@@ -59,7 +62,7 @@ namespace MediaTekDocuments.view
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Erreur dans dgvLivresListe_Enter : {ex.Message}");
+                Console.WriteLine($" Erreur dans dgvLivresListe_Enter : {ex.Message}");
                 this.Close();
             }
         }

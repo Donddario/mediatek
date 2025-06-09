@@ -30,21 +30,56 @@ namespace MediaTekDocuments.view
         private FrmModifierDvD FrmModifierDvD;
         private FrmModifierRevue FrmModifierRevue;
         private FrmAbonnements FrmAbonnements;
+        private Utilisateur utilisateur;
 
         /// <summary>
         /// Constructeur : création du contrôleur lié à ce formulaire
         /// </summary>
-        internal FrmMediatek()
+        internal FrmMediatek(Utilisateur utilisateur)
         {
             InitializeComponent();
             this.controller = new FrmMediatekController();
             this.FrmAjouterLivre = new FrmAjouterLivre(this);
             this.FrmAjouterRevue = new FrmAjouterRevue(this);
             this.FrmAjouterDvD = new FrmAjouterDvD(this);
-            this.FrmAbonnements = new FrmAbonnements(this);
+            this.utilisateur = utilisateur;
+
+            // Traitement de la visibilité des boutons selon le type d'utilisateur
+            if (utilisateur.IdService == "00002") // Service Prêts
+            {
+                tabOngletsApplication.TabPages.Remove(tabReceptionRevue);
+                tabOngletsApplication.TabPages.Remove(tabCommandesLivres);
+                tabOngletsApplication.TabPages.Remove(tabCommandesDvd);
+                tabOngletsApplication.TabPages.Remove(tabCommandesRevues);
+
+                btn_modifierLivre.Visible = false;
+                btn_supprimerLivre.Visible = false;
+                btn_ajouterLivre.Visible = false;
+
+                button1.Visible = false;
+                button2.Visible = false;
+                cbxLivresEtats.Visible = false;
+
+                btn_modifierDVD.Visible = false;
+                btn_supprimerDVD.Visible = false;
+                btn_ajouterDVD.Visible = false;
+
+                button12.Visible = false;
+                button4.Visible = false;
+                cbxDvdEtats.Visible = false;
+
+                btn_ajouterRevue.Visible = false;
+                btn_modifierRevue.Visible = false;
+                btn_supprimerRevue.Visible = false;
+
+            }
+
             this.tabCommandesLivres.Enter += new System.EventHandler(this.tabCommandesLivres_Enter);
+            Console.WriteLine("Événement tabCommandesLivres_Enter attaché !");
             this.tabCommandesDvd.Enter += new System.EventHandler(this.tabCommandesDvd_Enter);
+            Console.WriteLine("Événement tabCommandesDvd_Enter attaché !");
             this.tabCommandesRevues.Enter += new System.EventHandler(this.tabCommandesRevues_Enter);
+            Console.WriteLine("Événement tabCommandesLivres_Enter attaché !");
         }
 
         /// <summary>
@@ -267,29 +302,32 @@ namespace MediaTekDocuments.view
         /// <param name="commandesDocument">Liste des commandes de documents</param>
         private void RemplirCommandesDocumentRevueListe(List<Abonnement> abonnement)
         {
-            // Mise à jour du DataGridView avec la liste fusionnée
-            bdgCommandesRevueListe.DataSource = lesAbonnements;
-            dgv_commandesRevue.DataSource = bdgCommandesRevueListe;
-            dgv_commandesRevue.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+            if (utilisateur.IdService == "00001")
+            {
+                // Mise à jour du DataGridView avec la liste fusionnée
+                bdgCommandesRevueListe.DataSource = lesAbonnements;
+                dgv_commandesRevue.DataSource = bdgCommandesRevueListe;
+                dgv_commandesRevue.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
 
-            Console.WriteLine($"{lesAbonnements.Count} commandes affichées dans le DataGridView !");
+                Console.WriteLine($"{lesAbonnements.Count} commandes affichées dans le DataGridView !");
 
-            // Renommer les colonnes
-            dgv_commandesRevue.Columns["Id"].HeaderText = "Numéro de commande";
-            dgv_commandesRevue.Columns["DateCommande"].HeaderText = "Date de commande";
-            dgv_commandesRevue.Columns["Montant"].HeaderText = "Montant (€)";
-            dgv_commandesRevue.Columns["DateFinAbonnement"].HeaderText = "Date de résiliation";
-            dgv_commandesRevue.Columns["IdRevue"].HeaderText = "Numéro de revue";
+                // Renommer les colonnes
+                dgv_commandesRevue.Columns["Id"].HeaderText = "Numéro de commande";
+                dgv_commandesRevue.Columns["DateCommande"].HeaderText = "Date de commande";
+                dgv_commandesRevue.Columns["Montant"].HeaderText = "Montant (€)";
+                dgv_commandesRevue.Columns["DateFinAbonnement"].HeaderText = "Date de résiliation";
+                dgv_commandesRevue.Columns["IdRevue"].HeaderText = "Numéro de revue";
 
-            // Réordonner les colonnes pour afficher "Numéro du livre" en premier
-            dgv_commandesRevue.Columns["IdRevue"].DisplayIndex = 1;
-            dgv_commandesRevue.Columns["Id"].DisplayIndex = 2;
-            dgv_commandesRevue.Columns["DateCommande"].DisplayIndex = 3;
-            dgv_commandesRevue.Columns["DateFinAbonnement"].DisplayIndex = 3;
-            dgv_commandesRevue.Columns["Montant"].DisplayIndex = 4;
+                // Réordonner les colonnes pour afficher "Numéro du livre" en premier
+                dgv_commandesRevue.Columns["IdRevue"].DisplayIndex = 1;
+                dgv_commandesRevue.Columns["Id"].DisplayIndex = 2;
+                dgv_commandesRevue.Columns["DateCommande"].DisplayIndex = 3;
+                dgv_commandesRevue.Columns["DateFinAbonnement"].DisplayIndex = 3;
+                dgv_commandesRevue.Columns["Montant"].DisplayIndex = 4;
 
-            // Cacher les doublons
-            dgv_commandesRevue.Columns["IdCommande"].Visible = false;
+                // Cacher les doublons
+                dgv_commandesRevue.Columns["IdCommande"].Visible = false;
+            }
         }
 
         /// <summary>
@@ -1694,7 +1732,6 @@ namespace MediaTekDocuments.view
         private void FrmMediatek_Load(object sender, EventArgs e)
         {
             controller.GetAllDictionnaries();
-            FrmAbonnements.ShowDialog();
 
         }
 
@@ -2817,7 +2854,7 @@ namespace MediaTekDocuments.view
                     dgv_commandesDvd.CurrentCell = dgv_commandesDvd.Rows[0].Cells[0];
                 }
 
-                // ⚠️ Mettre à jour les informations du livre sélectionné
+                //  Mettre à jour les informations du livre sélectionné
                 dgv_commandesDvd_SelectionChanged(null, null);
             }
             else
@@ -3059,7 +3096,7 @@ namespace MediaTekDocuments.view
 
                     if (success)
                     {
-                        Console.WriteLine("✅ Suppression réussie.");
+                        Console.WriteLine("Suppression réussie.");
                         MessageBox.Show("La commande a bien été supprimée.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                         // ⚠️ Mettre à jour le DGV après suppression
@@ -3078,7 +3115,7 @@ namespace MediaTekDocuments.view
                     }
                     else
                     {
-                        Console.WriteLine("❌ Erreur lors de la suppression.");
+                        Console.WriteLine("Erreur lors de la suppression.");
                         MessageBox.Show("Erreur lors de la suppression de la commande.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }

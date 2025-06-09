@@ -9,6 +9,7 @@ using System.Configuration;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Security.Cryptography;
 
 
 namespace MediaTekDocuments.dal
@@ -22,6 +23,10 @@ namespace MediaTekDocuments.dal
         /// adresse de l'API
         /// </summary>
         private static readonly string uriApi = "http://localhost/rest_mediatek/";
+        /// <summary>
+        /// nom de connexion à la bdd
+        /// </summary>
+        private static readonly string connectionName = "MediaTekDocuments.Properties.Settings.mediatekConnectionString";
         /// <summary>
         /// instance unique de la classe
         /// </summary>
@@ -1959,5 +1964,72 @@ namespace MediaTekDocuments.dal
             }
         }
 
+        public Utilisateur GetUtilisateur(string login)
+        {
+            // Création de l'objet JSON à envoyer
+            var champs = new Dictionary<string, string> { { "login", login } };
+
+        // Sérialisation en format JSON
+        string jsonPayload = JsonConvert.SerializeObject(champs, new JsonSerializerSettings
+        {
+            ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver()
+        });
+
+        // Encodage en form-urlencoded
+        string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+
+        // Récupération de la commande spécifique
+        var result = TraitementRecup<Utilisateur>(GET, "utilisateur", formEncodedPayload);
+
+            return result?.FirstOrDefault(u => u.Login.Equals(login, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public bool IsConnected(string login, string password)
+        {
+            try
+            {
+                // Requête vers l’API pour récupérer l’utilisateur avec ce login
+                var champs = new Dictionary<string, string> { { "login", login } };
+                string jsonPayload = JsonConvert.SerializeObject(champs);
+                string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
+
+                // Appel API
+                List<Utilisateur> utilisateurs = TraitementRecup<Utilisateur>(GET, "utilisateur", formEncodedPayload);
+                if (utilisateurs == null || utilisateurs.Count == 0) return false;
+
+                var user = utilisateurs.FirstOrDefault(u => u.Login.Equals(login, StringComparison.OrdinalIgnoreCase));
+                if (user == null) return false;
+
+                // Hash du mot de passe entré
+                string pwdHash = HashPassword(password);
+
+                // Comparaison
+                return user.Password == pwdHash;
+
+            }
+            catch
+            {
+                return false;
+            }
+
+        }
+        /// <summary>
+        /// Permet d'hasher un mot de passe
+        /// </summary>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        public static string HashPassword(string password)
+        {
+            using (SHA256 sha256Hash = SHA256.Create())
+            {
+                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));
+                StringBuilder builder = new StringBuilder();
+                foreach (var b in bytes)
+                {
+                    builder.Append(b.ToString("x2"));
+                }
+                return builder.ToString();
+            }
+        }
     }
 }
