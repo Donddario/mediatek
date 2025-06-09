@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Security.Cryptography;
+using Serilog;
 
 
 namespace MediaTekDocuments.dal
@@ -78,6 +79,11 @@ namespace MediaTekDocuments.dal
             String connectionString = null;
             try
             {
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.Verbose()
+                    .WriteTo.Console()
+                    .WriteTo.File("logs/log.txt")
+                    .CreateLogger();
                 connectionString = GetConnectionStringByName(connectionName);
                 var Manager = BddManager.GetInstance(connectionString);
 
@@ -86,7 +92,7 @@ namespace MediaTekDocuments.dal
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Log.Fatal("Access.Access catch connectionString={0} erreur={1}", connectionString, e.Message);
                 Environment.Exit(0);
             }
         }
