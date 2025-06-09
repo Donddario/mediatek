@@ -72,7 +72,7 @@ namespace MediaTekDocuments.dal
 
         /// <summary>
         /// Méthode privée pour créer un singleton
-        /// initialise l'accès à l'API
+        /// initialise l'accès à l'API.
         /// </summary>
         private Access()
         {
