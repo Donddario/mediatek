@@ -12,8 +12,12 @@ using MediaTekDocuments.controller;
 
 namespace MediaTekDocuments.view
 {
+    /// <summary>
+    /// Formulaire de modification des Livres
+    /// </summary>
     public partial class FrmModifierLivre : Form
     {
+        // Déclaration des variables
         private Livre livre;
         private BindingSource bdgGenres = new BindingSource();
         private BindingSource bdgPublics = new BindingSource();
@@ -21,6 +25,11 @@ namespace MediaTekDocuments.view
         private FrmMediatekController controller = new FrmMediatekController();
         private FrmMediatek frmMediatek;
 
+        /// <summary>
+        /// Initialisation de la fenêtre
+        /// </summary>
+        /// <param name="livre"></param>
+        /// <param name="frmMediatek"></param>
         public FrmModifierLivre(Livre livre, FrmMediatek frmMediatek)
         {
             InitializeComponent();
@@ -32,9 +41,6 @@ namespace MediaTekDocuments.view
             txbLivresAuteur.Text = livre.Auteur;
             txbLivresCollection.Text = livre.Collection;
             txbLivresImage.Text = livre.Image;
-
-
-
         }
 
         /// <summary>
@@ -50,14 +56,25 @@ namespace MediaTekDocuments.view
                     if (item is Categorie cat && cat.Libelle.Trim() == value.Trim())
                     {
                         cbx.SelectedItem = item;
+                        Console.WriteLine($"{cbx.Name} sélectionne : {cat.Libelle}");
                         return;
                     }
                 }
 
+                Console.WriteLine($"Valeur '{value}' introuvable dans {cbx.Name}");
+            }
+            else
+            {
+                Console.WriteLine($"La ComboBox {cbx.Name} est vide !");
             }
         }
 
-
+        /// <summary>
+        /// Méthode qui remplit les combobox
+        /// </summary>
+        /// <param name="lesCategories"></param>
+        /// <param name="bdg"></param>
+        /// <param name="cbx"></param>
         public void RemplirCombo(List<Categorie> lesCategories, BindingSource bdg, ComboBox cbx)
         {
             bdg.DataSource = lesCategories;
@@ -68,11 +85,13 @@ namespace MediaTekDocuments.view
             }
         }
 
+        /// <summary>
+        /// Actions au chargement de la fenêtre
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void FrmModifierLivre_Load(object sender, EventArgs e)
         {
-
-
-
             try
             {
                 // Charger et afficher l'image dans le PictureBox
@@ -81,14 +100,23 @@ namespace MediaTekDocuments.view
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Erreur lors du chargement de l'image : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (pcbLivresImage.Image == null)
+                {
+                    Console.Write("Le chemin de l'image est null");
+                }
+                else
+                {
+                    MessageBox.Show("Erreur lors du chargement de l'image : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
-
-
 
             var genres = controller.GetAllGenres();
             var publics = controller.GetAllPublics();
             var rayons = controller.GetAllRayons();
+
+            Console.WriteLine($"Genres récupérés : {genres.Count}");
+            Console.WriteLine($"Publics récupérés : {publics.Count}");
+            Console.WriteLine($"Rayons récupérés : {rayons.Count}");
 
             // Remplir les ComboBox seulement si elles contiennent des données
             if (genres.Count > 0) RemplirCombo(genres, bdgGenres, cb_genre);
@@ -101,6 +129,11 @@ namespace MediaTekDocuments.view
             SetSelectedComboBox(cb_rayon, livre.Rayon);
         }
 
+        /// <summary>
+        /// Actions sur le bouton de modification
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_modifierLivre_Click(object sender, EventArgs e)
         {
             ModifierLivre();
@@ -108,6 +141,9 @@ namespace MediaTekDocuments.view
             frmMediatek.RemplirLivresListeComplete();
         }
 
+        /// <summary>
+        /// Méthode qui permet la modification d'un Livre
+        /// </summary>
         private void ModifierLivre()
         {
             // Vérifie que tous les champs sont remplis
@@ -156,6 +192,11 @@ namespace MediaTekDocuments.view
             }
         }
 
+        /// <summary>
+        /// Actions sur le bouton Parcourir
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_parcourir_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
@@ -174,7 +215,7 @@ namespace MediaTekDocuments.view
                     {
                         // Charger et afficher l'image dans le PictureBox
                         pcbLivresImage.Image = new Bitmap(openFileDialog.FileName);
-                        pcbLivresImage.SizeMode = PictureBoxSizeMode.Zoom; // Ajuster l'image pour qu'elle tienne bien dans le PictureBox
+                        pcbLivresImage.SizeMode = PictureBoxSizeMode.Zoom;
                     }
                     catch (Exception ex)
                     {

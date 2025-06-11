@@ -98,9 +98,9 @@ namespace MediaTekDocuments.dal
         }
 
         /// <summary>
-        /// Création et retour de l'instance unique de la classe
+        /// Création d'une seule instance de la classe
         /// </summary>
-        /// <returns>instance unique de la classe</returns>
+        /// <returns></returns>
         public static Access GetInstance()
         {
             if (instance == null)
@@ -196,10 +196,6 @@ namespace MediaTekDocuments.dal
                 {
                     abonnement.CompleterAvecCommande(commande);
                 }
-                else
-                {
-                    Console.WriteLine($"⚠️ Aucune commande trouvée pour l'abonnement {abonnement.Id}");
-                }
             }
 
             return lesAbonnements;
@@ -228,17 +224,10 @@ namespace MediaTekDocuments.dal
                         abonnementsAlerte.Add(abonnement);
                     }
                 }
-                else
-                {
-                    Console.WriteLine($"⚠️ Aucune commande trouvée pour l'abonnement {abonnement.Id}");
-                }
             }
 
             return abonnementsAlerte;
         }
-
-
-
 
         /// <summary>
         /// Retourne une commande spécifique à partir de son ID.
@@ -263,7 +252,7 @@ namespace MediaTekDocuments.dal
             var result = TraitementRecup<Commande>(GET, "commande", formEncodedPayload);
 
             // Vérifier le retour de l'API et filtrer l'ID
-            return result?.FirstOrDefault(cmd => cmd.Id == id);
+            return result?.Find(cmd => cmd.Id == id);
         }
 
         /// <summary>
@@ -289,12 +278,19 @@ namespace MediaTekDocuments.dal
             var result = TraitementRecup<Abonnement>(GET, "abonnement", formEncodedPayload);
 
             // Vérifie si la liste n'est pas vide et contient au moins un abonnement avec l'ID spécifié
-            return result != null && result.Any(cmd => cmd.IdRevue == id);
+            return result != null && result.Exists(cmd => cmd.IdRevue == id);
         }
 
+        /// <summary>
+        /// Retourne vrai si la Date de Paution est supérieure à Date de Commande et inférieure ou égale à Date de Fin
+        /// </summary>
+        /// <param name="dateCommande"></param>
+        /// <param name="dateFin"></param>
+        /// <param name="dateParution"></param>
+        /// <returns></returns>
         public bool ParutionDansAbonnement(DateTime dateCommande, DateTime dateFin, DateTime? dateParution)
         {
-            if (dateParution < dateCommande && dateParution <= dateFin)
+            if (dateParution > dateCommande && dateParution <= dateFin)
             {
                 return true;
             }
@@ -313,7 +309,6 @@ namespace MediaTekDocuments.dal
         {
             try
             {
-                Console.WriteLine("🔍 [DEBUG] ID reçu: " + id);
 
                 // 🔹 Conversion en JSON pour l'URL (comme Postman)
                 string jsonId = Uri.EscapeDataString(JsonConvert.SerializeObject(new { id }));
@@ -321,24 +316,17 @@ namespace MediaTekDocuments.dal
                 // 🔹 Création de l'URL avec le JSON directement
                 string url = $"exemplaire/{jsonId}";
 
-                Console.WriteLine("📤 [DEBUG] URL de la requête : " + url);
-
                 // 🔹 Appel de l'API
                 var result = TraitementRecup<Exemplaire>(GET, url, ""); // Pas de body
 
-                Console.WriteLine($"📥 [DEBUG] Résultat brut de l'API : {JsonConvert.SerializeObject(result)}");
-
                 // 🔹 Vérification et retour de l'exemplaire trouvé
-                return result?.FirstOrDefault(ex => ex.Id == id);
+                return result?.Find(ex => ex.Id == id);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"❌ Exception : {ex.Message}");
                 return null;
             }
         }
-
-
 
         /// <summary>
         /// Retourne une commande spécifique à partir de son ID.
@@ -363,9 +351,8 @@ namespace MediaTekDocuments.dal
             var result = TraitementRecup<Suivi>(GET, "suivi", formEncodedPayload);
 
             // Vérifier le retour de l'API et filtrer l'ID
-            return result?.FirstOrDefault(cmd => cmd.Id == id);
+            return result?.Find(cmd => cmd.Id == id);
         }
-
 
         /// <summary>
         /// Retourne toutes les dvd à partir de la BDD
@@ -387,7 +374,11 @@ namespace MediaTekDocuments.dal
             return lesRevues;
         }
 
-        //en construction
+        /// <summary>
+        /// Ajoute un LivreDvd
+        /// </summary>
+        /// <param name="livreDvd"></param>
+        /// <returns></returns>
         public bool AjouterLivreDvD(object livreDvd)
         {
             //effectuer une requete API de POST dans la table livredvd avec id
@@ -395,9 +386,6 @@ namespace MediaTekDocuments.dal
             {
                 // Sélectionner uniquement les champs requis
                 var docDict = JObject.FromObject(livreDvd);
-
-                Console.WriteLine("Contenu de document : " + JsonConvert.SerializeObject(livreDvd, Formatting.Indented));
-
 
                 var livreDvdFiltré = new
                 {
@@ -417,40 +405,34 @@ namespace MediaTekDocuments.dal
                 // Encapsuler dans "champs=" et encoder en application/x-www-form-urlencoded
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
 
-                // Log du format envoyé
-                Console.WriteLine("Payload encodé envoyé : " + formEncodedPayload);
-
                 // Envoyer la requête en POST avec application/x-www-form-urlencoded
                 List<Document> liste = TraitementRecup<Document>(POST, "livres_dvd", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
 
-                // Log de la réponse API
-                Console.WriteLine($"Réponse API: {liste}");
-
                 return (liste != null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("Erreur lors de l'ajout du document : " + ex.Message);
                 return false;
             }
         }
 
+        /// <summary>
+        /// Ajoute un abonnement
+        /// </summary>
+        /// <param name="abonnement"></param>
+        /// <returns></returns>
         public bool AjouterAbonnement(Abonnement abonnement)
         {
             try
             {
                 // Vérification et extraction des données
                 var docDict = JObject.Parse(JsonConvert.SerializeObject(abonnement));
-
-
-                Console.WriteLine("📌 Contenu de l'exemplaire : " + JsonConvert.SerializeObject(abonnement, Formatting.Indented));
 
                 // Extraction et conversion des champs
                 var abonnementTriage = new
@@ -465,7 +447,6 @@ namespace MediaTekDocuments.dal
                 // Vérification avant envoi
                 if (string.IsNullOrEmpty(abonnementTriage.id) || abonnementTriage.dateFinAbonnement == null)
                 {
-                    Console.WriteLine("❌ Erreur : Champs obligatoires manquants !");
                     return false;
                 }
 
@@ -481,39 +462,34 @@ namespace MediaTekDocuments.dal
                 // Encapsuler dans "champs=" et encoder en application/x-www-form-urlencoded
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
 
-                // Log du format envoyé
-                Console.WriteLine("🚀 Payload envoyé : " + formEncodedPayload);
-
                 // Envoi de la requête POST
                 List<Abonnement> liste = TraitementRecup<Abonnement>(POST, "abonnement", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("⚠️ Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
-                // Log de la réponse API
-                Console.WriteLine($"✅ Réponse API : {JsonConvert.SerializeObject(liste, Formatting.Indented)}");
-
                 return liste != null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("🔥 Erreur lors de l'ajout de l'exemplaire : " + ex.Message);
                 return false;
             }
 
         }
 
+        /// <summary>
+        /// Ajoute un exemplaire
+        /// </summary>
+        /// <param name="exemplaire"></param>
+        /// <returns></returns>
         public bool AjouterExemplaire(Exemplaire exemplaire)
         {
             try
             {
                 var docDict = JObject.Parse(JsonConvert.SerializeObject(exemplaire));
                 dynamic exemplaireTriage;
-
-                Console.WriteLine("📌 Contenu de l'exemplaire : " + JsonConvert.SerializeObject(exemplaire, Formatting.Indented));
 
                 if (exemplaire.Numero == 0) // ou == null si autorisé
                 {
@@ -541,10 +517,9 @@ namespace MediaTekDocuments.dal
                     };
                 }
 
-                // ✅ Vérification
+                // Vérification
                 if (string.IsNullOrEmpty(exemplaireTriage.id) || string.IsNullOrEmpty(exemplaireTriage.idEtat))
                 {
-                    Console.WriteLine("❌ Erreur : Champs obligatoires manquants !");
                     return false;
                 }
 
@@ -555,37 +530,33 @@ namespace MediaTekDocuments.dal
                     });
 
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
-                Console.WriteLine("🚀 Payload envoyé : " + formEncodedPayload);
 
                 List<Document> liste = TraitementRecup<Document>(POST, "exemplaire", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("⚠️ Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
-                Console.WriteLine($"✅ Réponse API : {JsonConvert.SerializeObject(liste, Formatting.Indented)}");
-
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("🔥 Erreur lors de l'ajout de l'exemplaire : " + ex.Message);
                 return false;
             }
         }
 
-
+        /// <summary>
+        /// Ajoute une commande
+        /// </summary>
+        /// <param name="commande"></param>
+        /// <returns></returns>
         public bool AjouterCommande(Commande commande)
         {
             try
             {
                 // Vérification et extraction des données
                 var docDict = JObject.Parse(JsonConvert.SerializeObject(commande));
-
-
-                Console.WriteLine("📌 Contenu de la commande : " + JsonConvert.SerializeObject(commande, Formatting.Indented));
 
                 // Extraction et conversion des champs
                 var commandeTriage = new
@@ -609,40 +580,34 @@ namespace MediaTekDocuments.dal
                 // Encapsuler dans "champs=" et encoder en application/x-www-form-urlencoded
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
 
-                // Log du format envoyé
-                Console.WriteLine("Payload envoyé : " + formEncodedPayload);
-
                 // Envoi de la requête POST
                 List<Document> liste = TraitementRecup<Document>(POST, "commande", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
-                // Log de la réponse API
-                Console.WriteLine($"Réponse API : {JsonConvert.SerializeObject(liste, Formatting.Indented)}");
-
                 return liste != null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("Erreur lors de l'ajout de l'exemplaire : " + ex.Message);
                 return false;
             }
 
         }
 
+        /// <summary>
+        /// Ajoute une CommandeDocument
+        /// </summary>
+        /// <param name="commandeDocument"></param>
+        /// <returns></returns>
         public bool AjouterCommandeDocument(CommandeDocument commandeDocument)
         {
             try
             {
                 // Vérification et extraction des données
                 var docDict = JObject.Parse(JsonConvert.SerializeObject(commandeDocument));
-
-
-                Console.WriteLine("📌 Contenu de la commande : " + JsonConvert.SerializeObject(commandeDocument, Formatting.Indented));
 
                 // Extraction et conversion des champs
                 var commandeTriage = new
@@ -664,40 +629,34 @@ namespace MediaTekDocuments.dal
                 // Encapsuler dans "champs=" et encoder en application/x-www-form-urlencoded
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
 
-                // Log du format envoyé
-                Console.WriteLine("Payload envoyé : " + formEncodedPayload);
-
                 // Envoi de la requête POST
                 List<Document> liste = TraitementRecup<Document>(POST, "commandedocument", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
-                // Log de la réponse API
-                Console.WriteLine($"Réponse API : {JsonConvert.SerializeObject(liste, Formatting.Indented)}");
-
                 return liste != null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("Erreur lors de l'ajout de l'exemplaire : " + ex.Message);
                 return false;
             }
 
         }
 
+        /// <summary>
+        /// Ajoute un Suivi
+        /// </summary>
+        /// <param name="suivi"></param>
+        /// <returns></returns>
         public bool AjouterSuivi(Suivi suivi)
         {
             try
             {
                 // Vérification et extraction des données
                 var docDict = JObject.Parse(JsonConvert.SerializeObject(suivi));
-
-
-                Console.WriteLine("📌 Contenu de la commande : " + JsonConvert.SerializeObject(suivi, Formatting.Indented));
 
                 // Extraction et conversion des champs
                 var commandeTriage = new
@@ -719,31 +678,28 @@ namespace MediaTekDocuments.dal
                 // Encapsuler dans "champs=" et encoder en application/x-www-form-urlencoded
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
 
-                // Log du format envoyé
-                Console.WriteLine("Payload envoyé : " + formEncodedPayload);
-
                 // Envoi de la requête POST
                 List<Document> liste = TraitementRecup<Document>(POST, "suivi", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
-                // Log de la réponse API
-                Console.WriteLine($"Réponse API : {JsonConvert.SerializeObject(liste, Formatting.Indented)}");
-
                 return liste != null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("Erreur lors de l'ajout de l'exemplaire : " + ex.Message);
                 return false;
             }
 
         }
 
+        /// <summary>
+        /// Ajoute une Revue
+        /// </summary>
+        /// <param name="revue"></param>
+        /// <returns></returns>
         public bool AjouterRevue(object revue)
         {
             //effectuer une requete API de POST dans la table livre avec id, isbn, auteur et collection
@@ -752,9 +708,6 @@ namespace MediaTekDocuments.dal
             {
                 // Sélectionner uniquement les champs requis
                 var docDict = JObject.FromObject(revue);
-
-                Console.WriteLine("Contenu de document : " + JsonConvert.SerializeObject(revue, Formatting.Indented));
-
 
                 var revueFiltré = new
                 {
@@ -777,34 +730,27 @@ namespace MediaTekDocuments.dal
                 // Encapsuler dans "champs=" et encoder en application/x-www-form-urlencoded
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
 
-                // Log du format envoyé
-                Console.WriteLine("Payload encodé envoyé : " + formEncodedPayload);
-
                 // Envoyer la requête en POST avec application/x-www-form-urlencoded
                 List<Document> liste = TraitementRecup<Document>(POST, "revue", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
-
-                // Log de la réponse API
-                Console.WriteLine($"Réponse API: {liste}");
-
                 return (liste != null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("Erreur lors de l'ajout du document : " + ex.Message);
                 return false;
             }
-
-
-            return true;
         }
 
+        /// <summary>
+        /// Ajoute un Livre
+        /// </summary>
+        /// <param name="livre"></param>
+        /// <returns></returns>
         public bool AjouterLivre(object livre)
         {
             //effectuer une requete API de POST dans la table livre avec id, isbn, auteur et collection
@@ -813,9 +759,6 @@ namespace MediaTekDocuments.dal
             {
                 // Sélectionner uniquement les champs requis
                 var docDict = JObject.FromObject(livre);
-
-                Console.WriteLine("Contenu de document : " + JsonConvert.SerializeObject(livre, Formatting.Indented));
-
 
                 var livreFiltré = new
                 {
@@ -838,43 +781,33 @@ namespace MediaTekDocuments.dal
                 // Encapsuler dans "champs=" et encoder en application/x-www-form-urlencoded
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
 
-                // Log du format envoyé
-                Console.WriteLine("Payload encodé envoyé : " + formEncodedPayload);
-
                 // Envoyer la requête en POST avec application/x-www-form-urlencoded
                 List<Document> liste = TraitementRecup<Document>(POST, "livre", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
-
-                // Log de la réponse API
-                Console.WriteLine($"Réponse API: {liste}");
-
                 return (liste != null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("Erreur lors de l'ajout du document : " + ex.Message);
                 return false;
             }
-
-
-            return true;
         }
 
+        /// <summary>
+        /// Ajoute un Document
+        /// </summary>
+        /// <param name="document"></param>
+        /// <returns></returns>
         public bool AjouterDocument(object document)
         {
             try
             {
                 // Sélectionner uniquement les champs requis
                 var docDict = JObject.FromObject(document);
-
-                Console.WriteLine("Contenu de document : " + JsonConvert.SerializeObject(document, Formatting.Indented));
-
 
                 var documentFiltré = new
                 {
@@ -899,31 +832,27 @@ namespace MediaTekDocuments.dal
                 // Encapsuler dans "champs=" et encoder en application/x-www-form-urlencoded
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
 
-                // Log du format envoyé
-                Console.WriteLine("Payload encodé envoyé : " + formEncodedPayload);
-
                 // Envoyer la requête en POST avec application/x-www-form-urlencoded
                 List<Document> liste = TraitementRecup<Document>(POST, "document", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
-
-                // Log de la réponse API
-                Console.WriteLine($"Réponse API: {liste}");
-
                 return (liste != null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("Erreur lors de l'ajout du document : " + ex.Message);
                 return false;
             }
         }
 
+        /// <summary>
+        /// Ajoute un Dvd
+        /// </summary>
+        /// <param name="dvd"></param>
+        /// <returns></returns>
         public bool AjouterDvd(object dvd)
         {
             //effectuer une requete API de POST dans la table livre avec id, isbn, auteur et collection
@@ -932,9 +861,6 @@ namespace MediaTekDocuments.dal
             {
                 // Sélectionner uniquement les champs requis
                 var docDict = JObject.FromObject(dvd);
-
-                Console.WriteLine("Contenu de document : " + JsonConvert.SerializeObject(dvd, Formatting.Indented));
-
 
                 var dvdFiltre = new
                 {
@@ -957,34 +883,25 @@ namespace MediaTekDocuments.dal
                 // Encapsuler dans "champs=" et encoder en application/x-www-form-urlencoded
                 string formEncodedPayload = $"champs={Uri.EscapeDataString(jsonPayload)}";
 
-                // Log du format envoyé
-                Console.WriteLine("Payload encodé envoyé : " + formEncodedPayload);
-
                 // Envoyer la requête en POST avec application/x-www-form-urlencoded
                 List<Document> liste = TraitementRecup<Document>(POST, "dvd", formEncodedPayload);
 
                 if (liste == null)
                 {
-                    Console.WriteLine("Erreur : La liste retournée par l'API est null.");
                     return false;
                 }
 
-
-                // Log de la réponse API
-                Console.WriteLine($"Réponse API: {liste}");
-
                 return (liste != null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine("Erreur lors de l'ajout du document : " + ex.Message);
                 return false;
             }
 
         }
 
         /// <summary>
-        /// 
+        /// Guetter d'un id par le nom d'un Rayon
         /// </summary>
         /// <param name="nomRayon"></param>
         /// <returns></returns>
@@ -1005,7 +922,7 @@ namespace MediaTekDocuments.dal
         }
 
         /// <summary>
-        /// 
+        /// Guetter d'un id par le nom d'un Public
         /// </summary>
         /// <param name="nomPublic"></param>
         /// <returns></returns>
@@ -1025,6 +942,11 @@ namespace MediaTekDocuments.dal
             return null; // Retourne null si aucun public correspondant n'est trouvé
         }
 
+        /// <summary>
+        /// Guetter d'un id par le nom d'un Genre
+        /// </summary>
+        /// <param name="nomGenre"></param>
+        /// <returns></returns>
         public string GetIdByNameOfGenre(string nomGenre)
         {
             if (classeurGenres != null && classeurGenres.Count > 0)
@@ -1041,10 +963,6 @@ namespace MediaTekDocuments.dal
             return null; // Retourne null si aucun genre correspondant n'est trouvé
         }
 
-
-
-
-
         /// <summary>
         /// Retourne les exemplaires d'une revue
         /// </summary>
@@ -1057,6 +975,9 @@ namespace MediaTekDocuments.dal
             return lesExemplaires;
         }
 
+        /// <summary>
+        /// Met à jour le dictionnaire
+        /// </summary>
         public void DictionnaireGenre()
         {
             List<Categorie> genres = GetAllGenres();
@@ -1065,11 +986,11 @@ namespace MediaTekDocuments.dal
             {
                 classeurGenres[genre.Id] = (Genre)genre; // Conversion Categorie -> Genre si nécessaire
             }
-
-            Console.WriteLine("📂 Classeur des genres créé avec succès !");
-
         }
 
+        /// <summary>
+        /// Met à jour le dictionnaire
+        /// </summary>
         public void DictionnairePublic()
         {
             List<Categorie> publics = GetAllPublics();
@@ -1079,10 +1000,11 @@ namespace MediaTekDocuments.dal
                 classeurPublics[pub.Id] = (Public)pub; // Conversion Categorie -> Public si nécessaire
             }
 
-            Console.WriteLine("📂 Classeur des genres créé avec succès !");
-
         }
 
+        /// <summary>
+        /// Met à jour le dictionnaire
+        /// </summary>
         public void DictionnaireRayon()
         {
             List<Categorie> rayons = GetAllRayons();
@@ -1092,10 +1014,14 @@ namespace MediaTekDocuments.dal
                 classeurRayons[rayon.Id] = (Rayon)rayon; // Conversion Categorie -> Public si nécessaire
             }
 
-            Console.WriteLine("📂 Classeur des genres créé avec succès !");
-
         }
 
+        /// <summary>
+        /// Modifie l'etat d'un exemplaire
+        /// </summary>
+        /// <param name="exemplaire"></param>
+        /// <param name="etat"></param>
+        /// <returns></returns>
         public bool ModifierEtatExemplaire(Exemplaire exemplaire, Etat etat)
         {
             try
@@ -1126,12 +1052,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
+        /// <summary>
+        /// Modifie une Revue
+        /// </summary>
+        /// <param name="revue"></param>
+        /// <returns></returns>
         public bool ModifierRevue(Revue revue)
         {
             try
@@ -1169,12 +1100,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
+        /// <summary>
+        /// Modifie un abonnement
+        /// </summary>
+        /// <param name="abonnement"></param>
+        /// <returns></returns>
         public bool UpdateAbonnement(Abonnement abonnement)
         {
             try
@@ -1190,8 +1126,6 @@ namespace MediaTekDocuments.dal
                 {
                     dateFinAbonnement = abonnement.DateFinAbonnement
                 };
-
-                Console.WriteLine("Date de fin = " + abonnement.DateFinAbonnement);
 
                 // Convertir l'objet en JSON
                 string jsonPayload = JsonConvert.SerializeObject(revueFiltre);
@@ -1212,12 +1146,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
+        /// <summary>
+        /// Modifie le montant d'une Commande
+        /// </summary>
+        /// <param name="commande"></param>
+        /// <returns></returns>
         public bool UpdateMontantCommande(Commande commande)
         {
             try
@@ -1233,8 +1172,6 @@ namespace MediaTekDocuments.dal
                 {
                     montant = commande.Montant
                 };
-
-                Console.WriteLine("Montant = " + commande.Montant);
 
                 // Convertir l'objet en JSON
                 string jsonPayload = JsonConvert.SerializeObject(revueFiltre);
@@ -1255,12 +1192,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
+        /// <summary>
+        /// Modifie un Suivi
+        /// </summary>
+        /// <param name="suivi"></param>
+        /// <returns></returns>
         public bool ModifierSuivi(Suivi suivi)
         {
             try
@@ -1299,12 +1241,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
+        /// <summary>
+        /// Modifie un Dvd
+        /// </summary>
+        /// <param name="dvd"></param>
+        /// <returns></returns>
         public bool ModifierDvd(Dvd dvd)
         {
             try
@@ -1344,12 +1291,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
+        /// <summary>
+        /// Modifie un Livre
+        /// </summary>
+        /// <param name="livre"></param>
+        /// <returns></returns>
         public bool ModifierLivre(Livre livre)
         {
             try
@@ -1388,12 +1340,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
+        /// <summary>
+        /// Modifie un Document
+        /// </summary>
+        /// <param name="document"></param>
+        /// <returns></returns>
         public bool ModifierDocument(Document document)
         {
             try
@@ -1433,12 +1390,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
+        /// <summary>
+        /// Modifie un LivreDvd
+        /// </summary>
+        /// <param name="livredvd"></param>
+        /// <returns></returns>
         public bool ModifierLivre_DvD(LivreDvd livredvd)
         {
             try
@@ -1474,7 +1436,7 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
@@ -1492,21 +1454,11 @@ namespace MediaTekDocuments.dal
             // Vérifier si des livres ont été trouvés
             if (lesLivres == null || lesLivres.Count == 0)
             {
-                Console.WriteLine("⚠️ Aucun livre trouvé dans la base.");
                 return null;
             }
 
             // Filtrer pour trouver le livre correspondant à l'ID
-            Livre livreTrouve = lesLivres.FirstOrDefault(livre => livre.Id == id);
-
-            if (livreTrouve == null)
-            {
-                Console.WriteLine($"❌ Aucun livre trouvé avec l'ID : {id}");
-            }
-            else
-            {
-                Console.WriteLine($"✅ Livre trouvé : {livreTrouve.Titre} (ID: {livreTrouve.Id})");
-            }
+            Livre livreTrouve = lesLivres.Find(livre => livre.Id == id);
 
             return livreTrouve;
         }
@@ -1523,21 +1475,11 @@ namespace MediaTekDocuments.dal
             // Vérifier si des livres ont été trouvés
             if (lesRevues == null || lesRevues.Count == 0)
             {
-                Console.WriteLine("⚠️ Aucun livre trouvé dans la base.");
                 return null;
             }
 
             // Filtrer pour trouver le livre correspondant à l'ID
-            Revue revueTrouve = lesRevues.FirstOrDefault(revue => revue.Id == id);
-
-            if (revueTrouve == null)
-            {
-                Console.WriteLine($"❌ Aucun livre trouvé avec l'ID : {id}");
-            }
-            else
-            {
-                Console.WriteLine($"✅ Livre trouvé : {revueTrouve.Titre} (ID: {revueTrouve.Id})");
-            }
+            Revue revueTrouve = lesRevues.Find(revue => revue.Id == id);
 
             return revueTrouve;
         }
@@ -1554,25 +1496,20 @@ namespace MediaTekDocuments.dal
             // Vérifier si des livres ont été trouvés
             if (lesDvd == null || lesDvd.Count == 0)
             {
-                Console.WriteLine("⚠️ Aucun livre trouvé dans la base.");
                 return null;
             }
 
             // Filtrer pour trouver le livre correspondant à l'ID
-            Dvd dvdTrouve = lesDvd.FirstOrDefault(dvd => dvd.Id == id);
-
-            if (dvdTrouve == null)
-            {
-                Console.WriteLine($"❌ Aucun dvd trouvé avec l'ID : {id}");
-            }
-            else
-            {
-                Console.WriteLine($"✅ dvd trouvé : {dvdTrouve.Titre} (ID: {dvdTrouve.Id})");
-            }
+            Dvd dvdTrouve = lesDvd.Find(dvd => dvd.Id == id);
 
             return dvdTrouve;
         }
 
+        /// <summary>
+        /// Supprime un Livre
+        /// </summary>
+        /// <param name="livre"></param>
+        /// <returns></returns>
         public bool SupprimerLivre(Livre livre)
         {
             try
@@ -1597,23 +1534,21 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression livre {livre.Id} : {ex.Message}");
                 return false;
             }
         }
 
+        /// <summary>
+        /// Supprime un Exemplairee
+        /// </summary>
+        /// <param name="exemplaire"></param>
+        /// <returns></returns>
         public bool SupprimerExemplaire(Exemplaire exemplaire)
         {
             try
             {
-                // Vérifier que l'ID du livre est présent
-                if (exemplaire.Numero == null)
-                {
-                    return false;
-                }
-
                 // Construire l'URL avec l'ID du livre au format JSON
                 string jsonId = Uri.EscapeDataString($"{{\"numero\":\"{exemplaire.Numero}\"}}");
                 string url = $"exemplaire/{jsonId}";
@@ -1628,13 +1563,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression livre {exemplaire.Numero} : {ex.Message}");
                 return false;
             }
         }
 
+        /// <summary>
+        /// Supprime une Commande
+        /// </summary>
+        /// <param name="commande"></param>
+        /// <returns></returns>
         public bool SupprimerCommande(Commande commande)
         {
             try
@@ -1659,13 +1598,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression commande {commande.Id} : {ex.Message}");
                 return false;
             }
         }
 
+        /// <summary>
+        /// Supprime un Abonnement
+        /// </summary>
+        /// <param name="abonnement"></param>
+        /// <returns></returns>
         public bool SupprimerAbonnement(Abonnement abonnement)
         {
             try
@@ -1690,13 +1633,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression commande {abonnement.Id} : {ex.Message}");
                 return false;
             }
         }
 
+        /// <summary>
+        /// Supprime une CommandeDocument
+        /// </summary>
+        /// <param name="commandeDocument"></param>
+        /// <returns></returns>
         public bool SupprimerCommandeDocument(CommandeDocument commandeDocument)
         {
             try
@@ -1721,13 +1668,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression commmandeDocument {commandeDocument.Id} : {ex.Message}");
                 return false;
             }
         }
 
+        /// <summary>
+        /// Supprime un Suivi
+        /// </summary>
+        /// <param name="suivi"></param>
+        /// <returns></returns>
         public bool SupprimerSuivi(Suivi suivi)
         {
             try
@@ -1752,14 +1703,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression suivi {suivi.Id} : {ex.Message}");
                 return false;
             }
         }
 
-
+        /// <summary>
+        /// Supprime un Dvd
+        /// </summary>
+        /// <param name="dvd"></param>
+        /// <returns></returns>
         public bool SupprimerDvd(Dvd dvd)
         {
             try
@@ -1784,13 +1738,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression livre {dvd.Id} : {ex.Message}");
                 return false;
             }
         }
 
+        /// <summary>
+        /// Supprime une Revue
+        /// </summary>
+        /// <param name="revue"></param>
+        /// <returns></returns>
         public bool SupprimerRevue(Revue revue)
         {
             try
@@ -1815,13 +1773,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression livre {revue.Id} : {ex.Message}");
                 return false;
             }
         }
 
+        /// <summary>
+        /// Supprime un LivreDvd
+        /// </summary>
+        /// <param name="livre"></param>
+        /// <returns></returns>
         public bool SupprimerLivre_DvD(LivreDvd livre)
         {
             try
@@ -1846,13 +1808,17 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression livre {livre.Id} : {ex.Message}");
                 return false;
             }
         }
 
+        /// <summary>
+        /// Supprime un Document
+        /// </summary>
+        /// <param name="document"></param>
+        /// <returns></returns>
         public bool SupprimerDocument(Document document)
         {
             try
@@ -1877,9 +1843,8 @@ namespace MediaTekDocuments.dal
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Erreur suppression livre {document.Id} : {ex.Message}");
                 return false;
             }
         }
@@ -1894,21 +1859,20 @@ namespace MediaTekDocuments.dal
         /// <returns>liste d'objets récupérés (ou liste vide)</returns>
         private List<T> TraitementRecup<T>(String methode, String message, String parametres)
         {
-            // trans
+            // Initialisation des logs
+            manager.Logs.Initialize();
+
             List<T> liste = new List<T>();
             try
             {
-                Console.WriteLine($"Méthode utilisée : {methode}, Message : {message}, Paramètres : {parametres}");
-
-                Console.WriteLine($"🔍 [DEBUG] Méthode: {methode}");
-                Console.WriteLine($"🔍 [DEBUG] Message: {message}");
-                Console.WriteLine($"🔍 [DEBUG] Paramètres envoyés: {parametres}");
-
-
+                Log.Information("Méthode utilisée : {methode}, Message : {message}, Paramètres : {parametres}", methode, message, parametres);
+                Log.Debug("Méthode: {methode}", methode);
+                Log.Debug("Message: {message}", message);
+                Log.Debug("Paramètres envoyés: {parametres}", parametres);
 
                 JObject retour = api.RecupDistant(methode, message, parametres);
+                Log.Debug("Retour API brut : {retour}", retour?.ToString());
 
-                Console.WriteLine(retour);
                 // extraction du code retourné
                 String code = (String)retour["code"];
                 if (code.Equals("200"))
@@ -1920,26 +1884,26 @@ namespace MediaTekDocuments.dal
                         // construction de la liste d'objets à partir du retour de l'api
                         liste = JsonConvert.DeserializeObject<List<T>>(resultString, new CustomBooleanJsonConverter());
 
-                        Console.WriteLine("Contenu brut de result : " + resultString);
+                        Log.Information("Contenu brut de result : {result}", resultString);
 
                     }
                     // dans le cas du POST (insert), récupération de la liste d'objets
                     if (methode.Equals(POST))
                     {
-                        Console.WriteLine($"Payload envoyé : {parametres}");
-                        Console.WriteLine("Réponse brute de l'API : " + retour.ToString());
+                        Log.Information("Payload envoyé : {parametres}", parametres);
+                        Log.Information("Réponse brute de l'API : {retour}", retour.ToString());
                     }
                 }
                 else
                 {
-                    Console.WriteLine("code erreur = " + code + " message = " + (String)retour["message"]);
+                    Log.Warning("Code erreur = {code}, message = {message}", code, (string)retour["message"]);
                 }
+
             }
             catch (Exception e)
             {
-                Console.WriteLine("Erreur lors de l'accès à l'API : " + e.Message);
+                Log.Fatal(e, "Erreur lors de l'accès à l'API");
                 Environment.Exit(0);
-
             }
             return liste;
         }
@@ -1955,17 +1919,6 @@ namespace MediaTekDocuments.dal
             Dictionary<Object, Object> dictionary = new Dictionary<Object, Object>();
             dictionary.Add(nom, valeur);
             return JsonConvert.SerializeObject(dictionary);
-        }
-
-        /// <summary>
-        /// Modification du convertisseur Json pour gérer le format de date
-        /// </summary>
-        private sealed class CustomDateTimeConverter : IsoDateTimeConverter
-        {
-            public CustomDateTimeConverter()
-            {
-                base.DateTimeFormat = "yyyy-MM-dd";
-            }
         }
 
         /// <summary>
@@ -1985,7 +1938,11 @@ namespace MediaTekDocuments.dal
                 serializer.Serialize(writer, value);
             }
         }
-
+        /// <summary>
+        /// Guetter d'un Utilisateur par son Login
+        /// </summary>
+        /// <param name="login"></param>
+        /// <returns></returns>
         public Utilisateur GetUtilisateur(string login)
         {
             // Création de l'objet JSON à envoyer
@@ -2005,7 +1962,12 @@ namespace MediaTekDocuments.dal
 
             return result?.FirstOrDefault(u => u.Login.Equals(login, StringComparison.OrdinalIgnoreCase));
         }
-
+        /// <summary>
+        /// Vérifie que l'utilisateur est connecté
+        /// </summary>
+        /// <param name="login"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
         public bool IsConnected(string login, string password)
         {
             try
@@ -2036,7 +1998,7 @@ namespace MediaTekDocuments.dal
 
         }
         /// <summary>
-        /// Permet d'hasher un mot de passe
+        /// Methode pour hasher un mot de passe
         /// </summary>
         /// <param name="password"></param>
         /// <returns></returns>

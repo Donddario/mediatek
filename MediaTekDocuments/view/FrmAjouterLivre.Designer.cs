@@ -124,7 +124,6 @@ namespace MediaTekDocuments.view
             this.label59.Size = new System.Drawing.Size(49, 13);
             this.label59.TabIndex = 35;
             this.label59.Text = "Image :";
-            this.label59.Click += new System.EventHandler(this.label59_Click);
             // 
             // cb_rayon
             // 
@@ -143,7 +142,6 @@ namespace MediaTekDocuments.view
             this.pcbLivresImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pcbLivresImage.TabIndex = 34;
             this.pcbLivresImage.TabStop = false;
-            this.pcbLivresImage.Click += new System.EventHandler(this.pcbLivresImage_Click);
             // 
             // cb_public
             // 
@@ -297,7 +295,7 @@ namespace MediaTekDocuments.view
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.Name = "FrmAjouterLivre";
-            this.Text = "Ajouter";
+            this.Text = "Ajouter un livre";
             this.Load += new System.EventHandler(this.FrmAjouterLivre_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();

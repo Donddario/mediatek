@@ -1,8 +1,8 @@
-﻿
+﻿using System;
 namespace MediaTekDocuments.model
 {
     /// <summary>
-    /// Classe métier Document (réunit les infomations communes à tous les documents : Livre, Revue, Dvd)
+    /// Classe métier Document
     /// </summary>
     public class Document
     {

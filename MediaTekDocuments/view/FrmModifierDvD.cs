@@ -12,14 +12,24 @@ using MediaTekDocuments.controller;
 
 namespace MediaTekDocuments.view
 {
+    /// <summary>
+    /// Formulaire de modification des Dvd
+    /// </summary>
     public partial class FrmModifierDvD : Form
     {
+        // Déclaration des variables
         private Dvd dvd;
         private BindingSource bdgGenres = new BindingSource();
         private BindingSource bdgPublics = new BindingSource();
         private BindingSource bdgRayons = new BindingSource();
         private FrmMediatekController controller = new FrmMediatekController();
         private FrmMediatek frmMediatek;
+
+        /// <summary>
+        /// Initialisation de la fenêtre
+        /// </summary>
+        /// <param name="dvd"></param>
+        /// <param name="frmMediatek"></param>
         public FrmModifierDvD(Dvd dvd, FrmMediatek frmMediatek)
         {
             InitializeComponent();
@@ -46,12 +56,24 @@ namespace MediaTekDocuments.view
                     if (item is Categorie cat && cat.Libelle.Trim() == value.Trim())
                     {
                         cbx.SelectedItem = item;
+                        Console.WriteLine($"✅ {cbx.Name} sélectionne : {cat.Libelle}");
                         return;
                     }
                 }
+
+                Console.WriteLine($"⚠️ Valeur '{value}' introuvable dans {cbx.Name}");
+            }
+            else
+            {
+                Console.WriteLine($"⚠️ La ComboBox {cbx.Name} est vide !");
             }
         }
 
+        /// <summary>
+        /// Actions au chargement de la fenêtre
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void FrmModifierDvD_Load(object sender, EventArgs e)
         {
             try
@@ -62,12 +84,25 @@ namespace MediaTekDocuments.view
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Erreur lors du chargement de l'image : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (pcbLivresImage.Image == null)
+                {
+                    Console.Write("Le chemin de l'image est null");
+                }
+                else
+                {
+                    MessageBox.Show("Erreur lors du chargement de l'image : " + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+
+
             }
 
             var genres = controller.GetAllGenres();
             var publics = controller.GetAllPublics();
             var rayons = controller.GetAllRayons();
+
+            Console.WriteLine($"Genres récupérés : {genres.Count}");
+            Console.WriteLine($"Publics récupérés : {publics.Count}");
+            Console.WriteLine($"Rayons récupérés : {rayons.Count}");
 
             // Remplir les ComboBox seulement si elles contiennent des données
             if (genres.Count > 0) RemplirCombo(genres, bdgGenres, cb_genre);
@@ -80,6 +115,11 @@ namespace MediaTekDocuments.view
             SetSelectedComboBox(cb_rayon, dvd.Rayon);
         }
 
+        /// <summary>
+        /// Actions sur le bouton Parcourir
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_parcourir_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
@@ -98,7 +138,7 @@ namespace MediaTekDocuments.view
                     {
                         // Charger et afficher l'image dans le PictureBox
                         pcbLivresImage.Image = new Bitmap(openFileDialog.FileName);
-                        pcbLivresImage.SizeMode = PictureBoxSizeMode.Zoom; // Ajuster l'image pour qu'elle tienne bien dans le PictureBox
+                        pcbLivresImage.SizeMode = PictureBoxSizeMode.Zoom;
                     }
                     catch (Exception ex)
                     {
@@ -108,6 +148,12 @@ namespace MediaTekDocuments.view
             }
         }
 
+        /// <summary>
+        /// Méthode qui remplit les combobox
+        /// </summary>
+        /// <param name="lesCategories"></param>
+        /// <param name="bdg"></param>
+        /// <param name="cbx"></param>
         public void RemplirCombo(List<Categorie> lesCategories, BindingSource bdg, ComboBox cbx)
         {
             bdg.DataSource = lesCategories;
@@ -118,6 +164,11 @@ namespace MediaTekDocuments.view
             }
         }
 
+        /// <summary>
+        /// Méthode qui permet la modification d'un dvd
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btn_modifierDvD_Click(object sender, EventArgs e)
         {
 

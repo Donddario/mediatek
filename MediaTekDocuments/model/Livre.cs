@@ -19,7 +19,5 @@ namespace MediaTekDocuments.model
             this.Collection = collection;
         }
 
-
-
     }
 }

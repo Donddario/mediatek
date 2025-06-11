@@ -12,12 +12,21 @@ using MediaTekDocuments.controller;
 
 namespace MediaTekDocuments.view
 {
+    /// <summary>
+    /// Formulaire d'affichage et de gestion des abonnements.
+    /// </summary>
     public partial class FrmAbonnements : Form
     {
+        // Création des variables
         private readonly BindingSource bdgAbonnements = new BindingSource();
         public List<Abonnement> lesAbonnements = new List<Abonnement>();
         private FrmMediatekController controller;
         private Utilisateur utilisateur;
+
+        /// <summary>
+        /// Initialisation de la fenêtre
+        /// </summary>
+        /// <param name="utilisateur"></param>
         public FrmAbonnements(Utilisateur utilisateur)
         {
             InitializeComponent();
@@ -25,11 +34,11 @@ namespace MediaTekDocuments.view
             this.utilisateur = utilisateur;
         }
 
-        private void FrmAbonnements_Load(object sender, EventArgs e)
-        {
-
-        }
-
+        /// <summary>
+        /// Bouton qui permet la fermeture de la fenêtre
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
             this.Hide();
@@ -38,6 +47,11 @@ namespace MediaTekDocuments.view
             this.Close();
         }
 
+        /// <summary>
+        /// Actions à l'entrée du dgv
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void dgvLivresListe_Enter(object sender, EventArgs e)
         {
             try
@@ -46,8 +60,8 @@ namespace MediaTekDocuments.view
 
                 if (lesAbonnements == null || lesAbonnements.Count == 0)
                 {
-                    Console.WriteLine("Aucun abonnement.");
-                    
+                    Console.WriteLine("Aucun abonnement trouvé, fermeture de la fenêtre.");
+                    this.Close();
                 }
                 else
                 {
@@ -62,16 +76,23 @@ namespace MediaTekDocuments.view
             }
             catch (Exception ex)
             {
-                Console.WriteLine($" Erreur dans dgvLivresListe_Enter : {ex.Message}");
+                Console.WriteLine($"Erreur dans dgvLivresListe_Enter : {ex.Message}");
                 this.Close();
             }
         }
 
+        /// <summary>
+        /// Méthode qui appelle RemplirAbonnementsListe
+        /// </summary>
         private void RemplirAbonnementsListeComplete()
         {
             RemplirAbonnementsListe(lesAbonnements);
         }
 
+        /// <summary>
+        /// Méthode qui remplit le dgv
+        /// </summary>
+        /// <param name="abonnements"></param>
         private void RemplirAbonnementsListe(List<Abonnement> abonnements)
         {
             bdgAbonnements.DataSource = abonnements;
@@ -90,6 +111,11 @@ namespace MediaTekDocuments.view
             dgvAbonnementsListe.Columns["dateFinAbonnement"].HeaderText = "Date d'expiration";
         }
 
+        /// <summary>
+        /// Actions sur le changement de sélection dans le dgv
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void dgvAbonnementsListe_SelectionChanged(object sender, EventArgs e)
         {
             if (dgvAbonnementsListe.CurrentCell != null)
@@ -98,14 +124,13 @@ namespace MediaTekDocuments.view
                 {
                     Abonnement abonnement = (Abonnement)bdgAbonnements.List[bdgAbonnements.Position];
                 }
-                catch
+                catch (Exception ex)
                 {
-                    //rien
+                    MessageBox.Show("Erreur." + ex.Message, "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             else
             {
-                //rien
             }
         }
     }

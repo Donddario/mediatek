@@ -1,4 +1,4 @@
-﻿
+﻿using System;
 namespace MediaTekDocuments.model
 {
     /// <summary>
@@ -9,6 +9,5 @@ namespace MediaTekDocuments.model
         public Genre(string id, string libelle) : base(id, libelle)
         {
         }
-
     }
 }

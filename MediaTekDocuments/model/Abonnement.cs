@@ -1,9 +1,9 @@
-﻿
+﻿using System;
+
 namespace MediaTekDocuments.model
 {
-    using System;
     /// <summary>
-    /// Classe métier Categorie (réunit les informations des classes Public, Genre et Rayon)
+    /// Classe métier Abonnement
     /// </summary>
     public class Abonnement
     {

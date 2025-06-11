@@ -2,7 +2,7 @@
 {
     using System;
     /// <summary>
-    /// Classe métier Categorie (réunit les informations des classes Public, Genre et Rayon)
+    /// Classe métier Suivi
     /// </summary>
     public class Suivi
     {
