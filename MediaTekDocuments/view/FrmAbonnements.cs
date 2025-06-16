@@ -60,8 +60,7 @@ namespace MediaTekDocuments.view
 
                 if (lesAbonnements == null || lesAbonnements.Count == 0)
                 {
-                    Console.WriteLine("Aucun abonnement trouvé, fermeture de la fenêtre.");
-                    this.Close();
+                    Console.WriteLine("Aucun abonnement trouvé");
                 }
                 else
                 {
